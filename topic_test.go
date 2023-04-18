@@ -15,9 +15,6 @@ var (
 	types = NewTypes(ct1, ct2)
 )
 
-func init() {
-
-}
 func TestNewTopic(t *testing.T) {
 
 	type args struct {
@@ -81,22 +78,13 @@ func TestNewTopic(t *testing.T) {
 		}},
 		{name: "Create Topic with 2 Types", args: args{
 			name: "TestNewTopic2Types",
-			pubs: []*Publisher{p1, p2},
 			cfg: TopicConfig{
-				types:              *types,
-				typeSafe:           false,
-				allowSetTypes:      false,
-				allowSetTypeSafe:   false,
-				allowSetName:       false,
-				allowOverride:      false,
-				allowAddPub:        false,
-				allowAllPublishers: false,
+				types: *types,
 			},
-			types: make([]interface{}, 0),
 		}, wantT: &Topic{
-			name:        "TestNewTopic2Types",
-			subscribers: make(Subscribers, 0),
+			name: "TestNewTopic2Types",
 			cfg: TopicConfig{
+				typeSafe: true,
 				types: Types{
 					"string": reflect.TypeOf("type1"),
 					"int":    reflect.TypeOf(2),

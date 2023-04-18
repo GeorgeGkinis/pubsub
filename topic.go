@@ -11,11 +11,11 @@ type TopicName string
 type Types map[string]reflect.Type
 
 func NewTypes(types ...interface{}) *Types {
-	t := new(Types)
+	t := make(Types, 0)
 	for _, v := range types {
-		(*t)[reflect.TypeOf(v).Name()] = reflect.TypeOf(v)
+		t[reflect.TypeOf(v).Name()] = reflect.TypeOf(v)
 	}
-	return t
+	return &t
 }
 
 type Subscribers map[string]*Subscriber
