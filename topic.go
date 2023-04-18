@@ -10,28 +10,38 @@ type TopicName string
 
 type Types map[string]reflect.Type
 
-type Subscribers map[string]Subscriber
+type Subscribers map[string]*Subscriber
+
+type Publishers map[string]*Publisher
 
 type TopicConfig struct {
-	types            Types
-	typeSafe         bool
-	allowSetTypes    bool
-	allowSetTypeSafe bool
-	allowSetName     bool
-	allowOverride    bool
+	types              Types
+	typeSafe           bool
+	allowSetTypes      bool
+	allowSetTypeSafe   bool
+	allowSetName       bool
+	allowOverride      bool
+	allowAddPub        bool
+	allowAllPublishers bool
 }
 
-type TopicStr struct {
+type Topic struct {
 	name        TopicName
 	subscribers Subscribers
+	publishers  Publishers
 	cfg         TopicConfig
 }
 
-func NewTopic(name TopicName, cfg TopicConfig, types ...interface{}) (t *TopicStr) {
+func NewTopic(name TopicName, cfg TopicConfig, pubs Publishers, types ...interface{}) (t *Topic) {
 	t.cfg = cfg
 	t.name = name
 	t.cfg.types = make(Types, 0)
 	t.subscribers = make(Subscribers, 0)
+	t.publishers = make(Publishers, 0)
+
+	for k, v := range pubs {
+		t.publishers[k] = v
+	}
 
 	if len(types) > 0 {
 		t.cfg.typeSafe = true
@@ -45,18 +55,22 @@ func NewTopic(name TopicName, cfg TopicConfig, types ...interface{}) (t *TopicSt
 	return
 }
 
-func (t *TopicStr) Pub(msg ...interface{}) (err error) {
+func (t *Topic) Pub(pub Publisher, msg ...interface{}) (err error) {
+	if _, ok := t.publishers[pub.Name()]; !ok && t.cfg.allowAllPublishers {
+		err = fmt.Errorf("publisher %s is not whitelisted for topic %s", pub.Name(), t.name)
+		return
+	}
 	for _, s := range t.subscribers {
-		s.Channel() <- msg
+		(*s).Channel() <- msg
 	}
 	return
 }
 
-func (t *TopicStr) Name() TopicName {
+func (t *Topic) Name() TopicName {
 	return t.name
 }
 
-func (t *TopicStr) SetName(name TopicName) (err error) {
+func (t *Topic) SetName(name TopicName) (err error) {
 	if !t.cfg.allowSetName {
 		err = fmt.Errorf("allow.SetName is false")
 		return
@@ -66,32 +80,54 @@ func (t *TopicStr) SetName(name TopicName) (err error) {
 	return
 }
 
-func (t *TopicStr) AddSub(sub Subscriber) (err error) {
-	if _, ok := t.subscribers[sub.Name()]; ok {
-		if !t.cfg.allowOverride {
-			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", sub.Name())
-			return
-		}
-	}
-	t.subscribers[sub.Name()] = sub
-	return
-}
-
-func (t *TopicStr) Subscribers() (s Subscribers) {
+func (t *Topic) Subscribers() (s Subscribers) {
 	for k, v := range t.subscribers {
 		s[k] = v
 	}
 	return
 }
 
-func (t *TopicStr) Types() (ty Types) {
+func (t *Topic) AddSub(sub *Subscriber) (err error) {
+	if _, ok := t.subscribers[(*sub).Name()]; ok {
+		if !t.cfg.allowOverride {
+			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", (*sub).Name())
+			return
+		}
+	}
+	t.subscribers[(*sub).Name()] = sub
+	return
+}
+
+func (t *Topic) Publishers() (p Publishers) {
+	for k, v := range t.publishers {
+		p[k] = v
+	}
+	return
+}
+
+func (t *Topic) AddPub(pub *Publisher) (err error) {
+	if !t.cfg.allowAddPub {
+		err = fmt.Errorf("AddPub not allowed for topic %s", t.name)
+		return
+	}
+	if _, ok := t.publishers[(*pub).Name()]; ok {
+		if !t.cfg.allowOverride {
+			err = fmt.Errorf("publisher %s already exists and allowOverwrite is false", (*pub).Name())
+			return
+		}
+	}
+	t.publishers[(*pub).Name()] = pub
+	return
+}
+
+func (t *Topic) Types() (ty Types) {
 	for k, v := range t.cfg.types {
 		ty[k] = v
 	}
 	return
 }
 
-func (t *TopicStr) SetTypes(types map[string]reflect.Type) (err error) {
+func (t *Topic) SetTypes(types map[string]reflect.Type) (err error) {
 	if !t.cfg.allowSetTypes {
 		err = fmt.Errorf("allow.SetTypes is false")
 		return
@@ -100,11 +136,11 @@ func (t *TopicStr) SetTypes(types map[string]reflect.Type) (err error) {
 	return
 }
 
-func (t *TopicStr) IsTypeSafe() bool {
+func (t *Topic) IsTypeSafe() bool {
 	return t.cfg.typeSafe
 }
 
-func (t *TopicStr) SetTypeSafe(typeSafe bool) (err error) {
+func (t *Topic) SetTypeSafe(typeSafe bool) (err error) {
 	if !t.cfg.allowSetTypeSafe {
 		err = fmt.Errorf("allow.SetTypeSafe is false")
 		return

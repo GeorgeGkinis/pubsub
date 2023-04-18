@@ -6,7 +6,7 @@ func init() {
 	tm = new(TopicManager)
 }
 
-type topics map[TopicName]*TopicStr
+type topics map[TopicName]*Topic
 
 type TopicsManagerConfig struct {
 	autoCreate bool
@@ -22,11 +22,11 @@ func NewTopicManager() (t *TopicManager) {
 	return t
 }
 
-func (tm *TopicManager) Topic(n TopicName) (t *TopicStr) {
-	if tm.autoCreate {
-		tm.topics[n] = NewTopic(n, TopicConfig{})
-	} else {
-		return nil
-	}
+func (tm *TopicManager) Topic(n TopicName) (t *Topic) {
+	//if tm.autoCreate {
+	//	tm.topics[n] = NewTopic(n, TopicConfig{})
+	//} else {
+	//	return nil
+	//}
 	return tm.topics[n]
 }
