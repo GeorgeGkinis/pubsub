@@ -10,6 +10,14 @@ type TopicName string
 
 type Types map[string]reflect.Type
 
+func NewTypes(types ...interface{}) *Types {
+	t := new(Types)
+	for _, v := range types {
+		(*t)[reflect.TypeOf(v).Name()] = reflect.TypeOf(v)
+	}
+	return t
+}
+
 type Subscribers map[string]*Subscriber
 
 type Publishers map[string]*Publisher
@@ -32,27 +40,29 @@ type Topic struct {
 	cfg         TopicConfig
 }
 
-func NewTopic(name TopicName, cfg TopicConfig, pubs Publishers, types ...interface{}) (t *Topic) {
+func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) *Topic {
+	t := new(Topic)
 	t.cfg = cfg
 	t.name = name
-	t.cfg.types = make(Types, 0)
 	t.subscribers = make(Subscribers, 0)
 	t.publishers = make(Publishers, 0)
 
-	for k, v := range pubs {
-		t.publishers[k] = v
-	}
-
-	if len(types) > 0 {
-		t.cfg.typeSafe = true
-		for _, v := range types {
-			tName := reflect.TypeOf(v).Name()
-			tType := reflect.TypeOf(v)
-			t.cfg.types[tName] = tType
+	if pubs != nil {
+		for _, v := range pubs {
+			t.publishers[v.Name()] = v
 		}
 	}
+
+	if cfg.types != nil && len(cfg.types) > 0 {
+		t.cfg.typeSafe = true
+		//for _, v := range types {
+		//	tName := reflect.TypeOf(v).Name()
+		//	tType := reflect.TypeOf(v)
+		//	t.cfg.types[tName] = tType
+		//}
+	}
 	log.Debugf("Created Topic %v", t)
-	return
+	return t
 }
 
 func (t *Topic) Pub(pub Publisher, msg ...interface{}) (err error) {

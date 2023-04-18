@@ -9,7 +9,7 @@ import (
 type PublisherIF interface {
 	TypeChecker
 	Name() string
-	GetSubscriptions() ([]Topic, error)
+	GetSubscriptions() Subscriptions
 }
 
 type TypeChecker interface {
@@ -19,6 +19,10 @@ type TypeChecker interface {
 type Publisher struct {
 	name          string
 	subscriptions Subscriptions
+}
+
+func NewPublisher(name string) *Publisher {
+	return &Publisher{name: name}
 }
 
 func (p Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk bool, err error) {
@@ -40,11 +44,9 @@ func (p Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk 
 }
 
 func (p Publisher) Name() string {
-	//TODO implement me
-	panic("implement me")
+	return p.name
 }
 
-func (p Publisher) GetSubscriptions() ([]Topic, error) {
-	//TODO implement me
-	panic("implement me")
+func (p Publisher) GetSubscriptions() Subscriptions {
+	return p.subscriptions
 }
