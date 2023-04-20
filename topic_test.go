@@ -79,23 +79,32 @@ func TestNewTopic(t *testing.T) {
 		{name: "Create Topic with 2 Types", args: args{
 			name: "TestNewTopic2Types",
 			cfg: TopicConfig{
-				types: *types,
-			},
+				types: *types},
+			pubs:  nil,
+			types: nil,
 		}, wantT: &Topic{
-			name: "TestNewTopic2Types",
+			name:        "TestNewTopic2Types",
+			subscribers: make(Subscribers, 0),
+			publishers:  make(Publishers, 0),
 			cfg: TopicConfig{
-				typeSafe: true,
 				types: Types{
 					"string": reflect.TypeOf("type1"),
 					"int":    reflect.TypeOf(2),
 				},
-			},
+				typeSafe: true},
 		}},
+		{name: "Create Topic no name", args: args{
+			name:  "",
+			cfg:   TopicConfig{},
+			pubs:  nil,
+			types: nil,
+		}, wantT: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotT := NewTopic(tt.args.name, tt.args.cfg, tt.args.pubs...); !reflect.DeepEqual(gotT, tt.wantT) {
-				t.Errorf("NewTopic() = %v, want %v", gotT, tt.wantT)
+			if gotT, _ := NewTopic(tt.args.name, tt.args.cfg, tt.args.pubs...); !reflect.DeepEqual(gotT, tt.wantT) {
+				t.Errorf("NewTopic()\nGot : %#v\nWant: %#v\n", gotT, tt.wantT)
 			}
 		})
 	}

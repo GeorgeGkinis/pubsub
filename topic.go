@@ -40,7 +40,13 @@ type Topic struct {
 	cfg         TopicConfig
 }
 
-func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) *Topic {
+func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) (topic *Topic, err error) {
+
+	if name == "" {
+		err = fmt.Errorf("Cannot create Topic without name.")
+		return nil, err
+	}
+
 	t := new(Topic)
 	t.cfg = cfg
 	t.name = name
@@ -55,14 +61,9 @@ func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) *Topic {
 
 	if cfg.types != nil && len(cfg.types) > 0 {
 		t.cfg.typeSafe = true
-		//for _, v := range types {
-		//	tName := reflect.TypeOf(v).Name()
-		//	tType := reflect.TypeOf(v)
-		//	t.cfg.types[tName] = tType
-		//}
 	}
 	log.Debugf("Created Topic %v", t)
-	return t
+	return t, err
 }
 
 func (t *Topic) Pub(pub Publisher, msg ...interface{}) (err error) {
