@@ -18,7 +18,7 @@ func NewTypes(types ...interface{}) *Types {
 	return &t
 }
 
-type Subscribers map[string]*Subscriber
+type Subscribers map[string]SubscriberIF
 
 type Publishers map[string]*Publisher
 
@@ -68,11 +68,14 @@ func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) (topic *Topic
 
 func (t *Topic) Pub(pub Publisher, msg ...interface{}) (err error) {
 	if _, ok := t.publishers[pub.Name()]; !ok && t.cfg.allowAllPublishers {
-		err = fmt.Errorf("publisher %s is not whitelisted for topic %s", pub.Name(), t.name)
+		err = fmt.Errorf("publisher %s is not whitelisted for topic %s and allowAllPublishers is false", pub.Name(), t.name)
 		return
 	}
 	for _, s := range t.subscribers {
-		(*s).Channel() <- msg
+		for _, m := range msg {
+			(s).Channel() <- m
+		}
+
 	}
 	return
 }
@@ -98,14 +101,14 @@ func (t *Topic) Subscribers() (s Subscribers) {
 	return
 }
 
-func (t *Topic) AddSub(sub *Subscriber) (err error) {
-	if _, ok := t.subscribers[(*sub).Name()]; ok {
+func (t *Topic) AddSub(sub SubscriberIF) (err error) {
+	if _, ok := t.subscribers[(sub).Name()]; ok {
 		if !t.cfg.allowOverride {
-			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", (*sub).Name())
+			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", sub.Name())
 			return
 		}
 	}
-	t.subscribers[(*sub).Name()] = sub
+	t.subscribers[(sub).Name()] = sub
 	return
 }
 
@@ -123,7 +126,7 @@ func (t *Topic) AddPub(pub *Publisher) (err error) {
 	}
 	if _, ok := t.publishers[(*pub).Name()]; ok {
 		if !t.cfg.allowOverride {
-			err = fmt.Errorf("publisher %s already exists and allowOverwrite is false", (*pub).Name())
+			err = fmt.Errorf("publisher %s already exists and allowOverride is false", (*pub).Name())
 			return
 		}
 	}

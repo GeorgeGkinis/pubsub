@@ -1,19 +1,38 @@
 package pubsub
 
 import (
+	log "github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
+	"time"
 )
 
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
 var (
-	p1    = NewPublisher("p1")
-	p2    = NewPublisher("p2")
-	ct1   = "type1"
-	ct2   = 2
-	t1    = reflect.TypeOf(ct1)
-	t2    = reflect.TypeOf(ct2)
+	p1 = NewPublisher("p1")
+	p2 = NewPublisher("p2")
+	s1 = NewSubscriber("s1", nil, nil)
+	s2 = NewSubscriber("s2", nil, nil)
+	s3 = NewSubscriber("s3", nil, nil)
+
+	ct1 = "type1"
+	ct2 = 2
+
 	types = NewTypes(ct1, ct2)
 )
+
+func simpleConsoleStringHandler(msg interface{}) (err error) {
+	log.Errorf("simpleConsoleStringHandler received message: %v", msg)
+	return
+}
+
+func simpleConsoleIntHandler(msg interface{}) (err error) {
+	log.Errorf("simpleConsoleIntHandler received message: %v", msg)
+	return
+}
 
 func TestNewTopic(t *testing.T) {
 
@@ -103,7 +122,9 @@ func TestNewTopic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotT, _ := NewTopic(tt.args.name, tt.args.cfg, tt.args.pubs...); !reflect.DeepEqual(gotT, tt.wantT) {
+			gotT, err := NewTopic(tt.args.name, tt.args.cfg, tt.args.pubs...)
+			log.Errorf("Error: %v", err)
+			if !reflect.DeepEqual(gotT, tt.wantT) {
 				t.Errorf("NewTopic()\nGot : %#v\nWant: %#v\n", gotT, tt.wantT)
 			}
 		})
@@ -111,22 +132,72 @@ func TestNewTopic(t *testing.T) {
 }
 
 func TestTopic_AddPub(t1 *testing.T) {
-	type fields struct {
-		name        TopicName
-		subscribers Subscribers
-		publishers  Publishers
-		cfg         TopicConfig
-	}
 	type args struct {
 		pub *Publisher
 	}
 	tests := []struct {
 		name    string
-		fields  fields
+		fields  Topic
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "Topic no Publishers and allowAddPub true", fields: Topic{
+			name:       "allowAddPub true",
+			publishers: make(Publishers, 0),
+			cfg: TopicConfig{
+				allowAddPub: true,
+			},
+		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: false},
+		{name: "Topic no Publishers and allowAddPub false", fields: Topic{
+			name:       "allowAddPub false",
+			publishers: make(Publishers, 0),
+			cfg: TopicConfig{
+				allowAddPub: false,
+			},
+		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
+
+		{name: "Topic with Publishers and allowAddPub true", fields: Topic{
+			name: "allowAddPub true",
+			publishers: Publishers{
+				"p1": &Publisher{
+					name: "p1",
+				}},
+			cfg: TopicConfig{
+				allowAddPub: true,
+			},
+		}, args: struct{ pub *Publisher }{pub: p2}, wantErr: false},
+		{name: "Topic with Publishers and allowAddPub false", fields: Topic{
+			name: "allowAddPub false",
+			publishers: Publishers{
+				"p1": &Publisher{
+					name: "p1",
+				}},
+			cfg: TopicConfig{
+				allowAddPub: false,
+			},
+		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
+		{name: "Add Publisher with same name to topic and allowOverwrite true", fields: Topic{
+			name: "allowOverwrite false",
+			publishers: Publishers{
+				"p1": &Publisher{
+					name: "p1",
+				}},
+			cfg: TopicConfig{
+				allowAddPub:   true,
+				allowOverride: true,
+			},
+		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: false},
+		{name: "Add Publisher with same name to topic and allowOverwrite false", fields: Topic{
+			name: "allowOverwrite false",
+			publishers: Publishers{
+				"p1": &Publisher{
+					name: "p1",
+				}},
+			cfg: TopicConfig{
+				allowAddPub:   true,
+				allowOverride: false,
+			},
+		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
@@ -136,7 +207,9 @@ func TestTopic_AddPub(t1 *testing.T) {
 				publishers:  tt.fields.publishers,
 				cfg:         tt.fields.cfg,
 			}
-			if err := t.AddPub(tt.args.pub); (err != nil) != tt.wantErr {
+			err := t.AddPub(tt.args.pub)
+			log.Errorf("Error: %v", err)
+			if (err != nil) != tt.wantErr {
 				t1.Errorf("AddPub() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -144,32 +217,67 @@ func TestTopic_AddPub(t1 *testing.T) {
 }
 
 func TestTopic_AddSub(t1 *testing.T) {
-	type fields struct {
-		name        TopicName
-		subscribers Subscribers
-		publishers  Publishers
-		cfg         TopicConfig
-	}
 	type args struct {
-		sub *Subscriber
+		sub SubscriberIF
 	}
 	tests := []struct {
 		name    string
-		fields  fields
+		topic   Topic
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "Topic no Subs and allowOverride true", topic: Topic{
+			name:        "Topic no Subs and allowOverride true",
+			subscribers: make(Subscribers, 0),
+			cfg:         TopicConfig{allowOverride: true},
+		}, args: args{
+			s1,
+		}, wantErr: false},
+		{name: "Topic no Subs and allowOverride false", topic: Topic{
+			name:        "Topic no Subs and allowOverride false",
+			subscribers: make(Subscribers, 0),
+			cfg:         TopicConfig{allowOverride: false},
+		}, args: args{s1}, wantErr: false},
+		{name: "Add Subscriber with same name to topic allowOverride true", topic: Topic{
+			name: "Topic same Sub and allowOverride true",
+			subscribers: Subscribers{
+				"s1": s1,
+			},
+			cfg: TopicConfig{allowOverride: true},
+		}, args: args{s1}, wantErr: false},
+		{name: "Add Subscriber with same name to topic and allowOverride false", topic: Topic{
+			name: "Topic same Sub and allowOverride false",
+			subscribers: Subscribers{
+				"s1": s1,
+			},
+			cfg: TopicConfig{allowOverride: false},
+		}, args: args{s1}, wantErr: true},
+		{name: "Add Subscriber with other name to topic allowOverride true", topic: Topic{
+			name: "Topic same Sub and allowOverride true",
+			subscribers: Subscribers{
+				"s1": s1,
+			},
+			cfg: TopicConfig{allowOverride: true},
+		}, args: args{s2}, wantErr: false},
+		{name: "Add Subscriber with other name to topic and allowOverride false", topic: Topic{
+			name: "Topic same Sub and allowOverride false",
+			subscribers: Subscribers{
+				"s1": s1,
+			},
+			cfg: TopicConfig{allowOverride: false},
+		}, args: args{s2}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &Topic{
-				name:        tt.fields.name,
-				subscribers: tt.fields.subscribers,
-				publishers:  tt.fields.publishers,
-				cfg:         tt.fields.cfg,
+				name:        tt.topic.name,
+				subscribers: tt.topic.subscribers,
+				publishers:  tt.topic.publishers,
+				cfg:         tt.topic.cfg,
 			}
-			if err := t.AddSub(tt.args.sub); (err != nil) != tt.wantErr {
+			err := t.AddSub(tt.args.sub)
+			log.Errorf("Error: %v", err)
+			if (err != nil) != tt.wantErr {
 				t1.Errorf("AddSub() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -177,26 +285,36 @@ func TestTopic_AddSub(t1 *testing.T) {
 }
 
 func TestTopic_IsTypeSafe(t1 *testing.T) {
-	type fields struct {
-		name        TopicName
-		subscribers Subscribers
-		publishers  Publishers
-		cfg         TopicConfig
-	}
+
 	tests := []struct {
-		name   string
-		fields fields
-		want   bool
+		name  string
+		topic Topic
+		want  bool
 	}{
-		// TODO: Add test cases.
+		{name: "Topic isTypeSafe true", topic: Topic{
+			name:        "Topic isTypeSafe true",
+			subscribers: nil,
+			publishers:  nil,
+			cfg: TopicConfig{
+				typeSafe: true,
+			},
+		}, want: true},
+		{name: "Topic isTypeSafe false", topic: Topic{
+			name:        "Topic isTypeSafe false",
+			subscribers: nil,
+			publishers:  nil,
+			cfg: TopicConfig{
+				typeSafe: false,
+			},
+		}, want: false},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &Topic{
-				name:        tt.fields.name,
-				subscribers: tt.fields.subscribers,
-				publishers:  tt.fields.publishers,
-				cfg:         tt.fields.cfg,
+				name:        tt.topic.name,
+				subscribers: tt.topic.subscribers,
+				publishers:  tt.topic.publishers,
+				cfg:         tt.topic.cfg,
 			}
 			if got := t.IsTypeSafe(); got != tt.want {
 				t1.Errorf("IsTypeSafe() = %v, want %v", got, tt.want)
@@ -206,26 +324,22 @@ func TestTopic_IsTypeSafe(t1 *testing.T) {
 }
 
 func TestTopic_Name(t1 *testing.T) {
-	type fields struct {
-		name        TopicName
-		subscribers Subscribers
-		publishers  Publishers
-		cfg         TopicConfig
-	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   TopicName
+		name  string
+		topic Topic
+		want  TopicName
 	}{
-		// TODO: Add test cases.
+		{name: "Topic with name", topic: Topic{
+			name: "Topic with name",
+		}, want: "Topic with name"},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &Topic{
-				name:        tt.fields.name,
-				subscribers: tt.fields.subscribers,
-				publishers:  tt.fields.publishers,
-				cfg:         tt.fields.cfg,
+				name:        tt.topic.name,
+				subscribers: tt.topic.subscribers,
+				publishers:  tt.topic.publishers,
+				cfg:         tt.topic.cfg,
 			}
 			if got := t.Name(); got != tt.want {
 				t1.Errorf("Name() = %v, want %v", got, tt.want)
@@ -235,35 +349,64 @@ func TestTopic_Name(t1 *testing.T) {
 }
 
 func TestTopic_Pub(t1 *testing.T) {
-	type fields struct {
-		name        TopicName
-		subscribers Subscribers
-		publishers  Publishers
-		cfg         TopicConfig
-	}
+
 	type args struct {
 		pub Publisher
 		msg []interface{}
 	}
+	type handler struct {
+		typeof     interface{}
+		handlefunc func(msg interface{}) (err error)
+	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name     string
+		topic    Topic
+		handlers []handler
+		args     args
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{name: "Publisher exists, allowAllPublishers true, 2 messages sent", topic: Topic{
+			name:        "Publisher exists and allowAllPublishers true",
+			subscribers: Subscribers{"s3": s3},
+			publishers:  Publishers{"p1": p1},
+			cfg:         TopicConfig{},
+		},
+			handlers: []handler{
+				{
+					typeof:     "",
+					handlefunc: simpleConsoleStringHandler,
+				},
+				{
+					typeof:     42,
+					handlefunc: simpleConsoleIntHandler,
+				}},
+			args: args{
+				pub: *p1,
+				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42},
+			}, wantErr: false},
+		//{name: "Publisher does not exist and allowAllPublishers true", topic: , args: , wantErr: },
+		//{name: "Publisher does not exist and allowAllPublishers false", topic: , args: , wantErr: },
+
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			t := &Topic{
-				name:        tt.fields.name,
-				subscribers: tt.fields.subscribers,
-				publishers:  tt.fields.publishers,
-				cfg:         tt.fields.cfg,
+				name:        tt.topic.name,
+				subscribers: tt.topic.subscribers,
+				publishers:  tt.topic.publishers,
+				cfg:         tt.topic.cfg,
 			}
+			log.SetLevel(log.DebugLevel)
+			for _, v := range tt.handlers {
+				s3.AddHandler(v.typeof, v.handlefunc)
+			}
+
+			log.Debugf("Handlers registered: %v", s3.handlers)
+			s3.Listen()
 			if err := t.Pub(tt.args.pub, tt.args.msg...); (err != nil) != tt.wantErr {
 				t1.Errorf("Pub() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			time.Sleep(100 * time.Millisecond)
 		})
 	}
 }
