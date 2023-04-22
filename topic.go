@@ -10,12 +10,12 @@ type TopicName string
 
 type Types map[string]reflect.Type
 
-func NewTypes(types ...interface{}) *Types {
+func NewTypes(types ...interface{}) Types {
 	t := make(Types, 0)
 	for _, v := range types {
 		t[reflect.TypeOf(v).Name()] = reflect.TypeOf(v)
 	}
-	return &t
+	return t
 }
 
 type Subscribers map[string]SubscriberIF
@@ -49,26 +49,30 @@ func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) (topic *Topic
 
 	t := new(Topic)
 	t.cfg = cfg
+	t.cfg.types = make(Types, 0)
 	t.name = name
 	t.subscribers = make(Subscribers, 0)
 	t.publishers = make(Publishers, 0)
 
 	if pubs != nil {
 		for _, v := range pubs {
-			t.publishers[v.Name()] = v
+			if v != nil {
+				t.publishers[v.Name()] = v
+			}
 		}
 	}
 
 	if cfg.types != nil && len(cfg.types) > 0 {
 		t.cfg.typeSafe = true
+		t.cfg.types = cfg.types
 	}
 	log.Debugf("Created Topic %v", t)
 	return t, err
 }
 
 func (t *Topic) Pub(pub Publisher, msg ...interface{}) (err error) {
-	if _, ok := t.publishers[pub.Name()]; !ok && t.cfg.allowAllPublishers {
-		err = fmt.Errorf("publisher %s is not whitelisted for topic %s and allowAllPublishers is false", pub.Name(), t.name)
+	if _, ok := t.publishers[pub.Name()]; ok == false && t.cfg.allowAllPublishers == false {
+		err = fmt.Errorf("publisher %s is not whitelisted for topic: \"%s\" and allowAllPublishers is false", pub.Name(), t.name)
 		return
 	}
 	for _, s := range t.subscribers {
@@ -89,16 +93,16 @@ func (t *Topic) SetName(name TopicName) (err error) {
 		err = fmt.Errorf("allow.SetName is false")
 		return
 	}
+	if name == "" {
+		err = fmt.Errorf("tried to set name to empty string for Topic %s", t.name)
+	}
 	log.Debugf("Changing topic name from %s to %s", t.name, name)
 	t.name = name
 	return
 }
 
 func (t *Topic) Subscribers() (s Subscribers) {
-	for k, v := range t.subscribers {
-		s[k] = v
-	}
-	return
+	return t.subscribers
 }
 
 func (t *Topic) AddSub(sub SubscriberIF) (err error) {
@@ -113,10 +117,7 @@ func (t *Topic) AddSub(sub SubscriberIF) (err error) {
 }
 
 func (t *Topic) Publishers() (p Publishers) {
-	for k, v := range t.publishers {
-		p[k] = v
-	}
-	return
+	return t.publishers
 }
 
 func (t *Topic) AddPub(pub *Publisher) (err error) {
@@ -135,18 +136,21 @@ func (t *Topic) AddPub(pub *Publisher) (err error) {
 }
 
 func (t *Topic) Types() (ty Types) {
-	for k, v := range t.cfg.types {
-		ty[k] = v
-	}
-	return
+	return t.cfg.types
 }
 
-func (t *Topic) SetTypes(types map[string]reflect.Type) (err error) {
+func (t *Topic) SetTypes(types ...interface{}) (err error) {
 	if !t.cfg.allowSetTypes {
-		err = fmt.Errorf("allow.SetTypes is false")
+		err = fmt.Errorf("allow.SetTypes is false for Topic %s", t.name)
 		return
 	}
-	t.cfg.types = types
+	if len(types) == 0 {
+		err = fmt.Errorf("no types received for Topic: %s", t.name)
+		return
+	}
+	for _, v := range types {
+		t.cfg.types[reflect.TypeOf(v).Name()] = reflect.TypeOf(v)
+	}
 	return
 }
 
@@ -156,7 +160,7 @@ func (t *Topic) IsTypeSafe() bool {
 
 func (t *Topic) SetTypeSafe(typeSafe bool) (err error) {
 	if !t.cfg.allowSetTypeSafe {
-		err = fmt.Errorf("allow.SetTypeSafe is false")
+		err = fmt.Errorf("allowSetTypeSafe is false for Topic %s", t.name)
 		return
 	}
 	t.cfg.typeSafe = typeSafe

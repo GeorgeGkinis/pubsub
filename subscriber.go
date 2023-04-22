@@ -15,7 +15,7 @@ type SubscriberIF interface {
 
 type HandlerFunc func(msg interface{}) (err error)
 
-type Handlers map[reflect.Type]HandlerFunc
+type Handlers map[string]HandlerFunc
 
 type Subscriptions []*Topic
 
@@ -51,7 +51,7 @@ func (h Subscriber) Listen() {
 		go func() {
 			for msg := range h.ch {
 				log.Debugf("Received message of type %T", msg)
-				handler, ok := h.handlers[reflect.TypeOf(msg)]
+				handler, ok := h.handlers[reflect.TypeOf(msg).Name()]
 				if !ok {
 					log.Errorf("Subscriber %s has no handler for message type %T", h.name, msg)
 				}
@@ -70,7 +70,7 @@ func (h Subscriber) AddHandler(typeOf interface{}, handler HandlerFunc) {
 		log.Errorf("Required: typeOf and handler. Provided: typeOf: %v", typeOf)
 		return
 	}
-	h.handlers[reflect.TypeOf(typeOf)] = handler
+	h.handlers[reflect.TypeOf(typeOf).Name()] = handler
 	log.Debugf("Added handler for type %s, %v for Subscriber %s", reflect.TypeOf(typeOf), &handler, h.name)
 
 	//TODO: Check if overwriting existing handler
