@@ -108,7 +108,7 @@ func (t *Topic) Subscribers() (s Subscribers) {
 func (t *Topic) AddSub(sub SubscriberIF) (err error) {
 	if _, ok := t.subscribers[(sub).Name()]; ok {
 		if !t.cfg.allowOverride {
-			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", sub.Name())
+			err = fmt.Errorf("subscriber %s already exists and allowOverwrite is false", (sub).Name())
 			return
 		}
 	}

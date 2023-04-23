@@ -23,10 +23,11 @@ func NewTopicManager() (t *TopicManager) {
 }
 
 func (tm *TopicManager) Topic(n TopicName) (t *Topic) {
-	//if tm.autoCreate {
-	//	tm.topics[n] = NewTopic(n, TopicConfig{})
-	//} else {
-	//	return nil
-	//}
+	if tm.autoCreate {
+		t, _ := NewTopic(n, TopicConfig{})
+		tm.topics[n] = t
+	} else {
+		return nil
+	}
 	return tm.topics[n]
 }

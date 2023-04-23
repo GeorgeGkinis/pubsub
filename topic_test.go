@@ -19,19 +19,7 @@ var (
 
 	ct1 = "type1"
 	ct2 = 2
-
-	types = NewTypes(ct1, ct2)
 )
-
-func simpleConsoleStringHandler(msg interface{}) (err error) {
-	log.Errorf("simpleConsoleStringHandler received message: %v", msg)
-	return
-}
-
-func simpleConsoleIntHandler(msg interface{}) (err error) {
-	log.Errorf("simpleConsoleIntHandler received message: %v", msg)
-	return
-}
 
 func TestNewTopic(t *testing.T) {
 
@@ -359,7 +347,7 @@ func TestTopic_Pub(t1 *testing.T) {
 	}
 	type handler struct {
 		typeof     interface{}
-		handlefunc func(msg interface{}) (err error)
+		handlefunc HandlerFunc
 	}
 	type tp struct {
 		name        TopicName
@@ -474,7 +462,7 @@ func TestTopic_Pub(t1 *testing.T) {
 				log.Error(err)
 			}
 			for _, v := range tt.handlers {
-				s3.AddHandler(v.typeof, v.handlefunc)
+				_ = s3.AddHandler(v.typeof, &v.handlefunc)
 			}
 			log.Debugf("Handlers registered: %v", s3.handlers)
 			s3.Listen()

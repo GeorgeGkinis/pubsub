@@ -1,11 +1,28 @@
 package pubsub
 
 import (
+	log "github.com/sirupsen/logrus"
 	"reflect"
 	"testing"
 )
 
+var (
+	stringTopic, _             = NewTopic("stringTopic", TopicConfig{})
+	fa             HandlerFunc = simpleConsoleIntHandler
+)
+
+func simpleConsoleStringHandler(msg interface{}) (err error) {
+	log.Debugf("simpleConsoleStringHandler received message: %v", msg)
+	return
+}
+
+func simpleConsoleIntHandler(msg interface{}) (err error) {
+	log.Debugf("simpleConsoleIntHandler received message: %v", msg)
+	return
+}
+
 func TestNewSubscriber(t *testing.T) {
+
 	type args struct {
 		name          string
 		handlers      Handlers
@@ -16,107 +33,70 @@ func TestNewSubscriber(t *testing.T) {
 		args args
 		want *Subscriber
 	}{
-		// TODO: Add test cases.
+		{name: "Subscriber no Topic",
+			args: args{
+				name:          "Subscriber no Topic",
+				handlers:      Handlers{"string": &fa},
+				subscriptions: []*Topic{},
+			}, want: &Subscriber{
+				name:          "Subscriber no Topic",
+				handlers:      Handlers{"string": &fa},
+				subscriptions: []*Topic{},
+			}},
+		{name: "Subscriber One Topic",
+			args: args{
+				name:          "Subscriber One Topic",
+				handlers:      Handlers{"string": &fa},
+				subscriptions: []*Topic{stringTopic},
+			}, want: &Subscriber{
+				name:          "Subscriber One Topic",
+				handlers:      Handlers{"string": &fa},
+				subscriptions: []*Topic{stringTopic},
+			}},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSubscriber(tt.args.name, tt.args.handlers, tt.args.subscriptions...); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewSubscriber() = %v, want %v", got, tt.want)
+
+			got := NewSubscriber(tt.args.name, tt.args.handlers, tt.args.subscriptions...)
+			tt.want.ch = got.ch
+			equal := reflect.DeepEqual(got, tt.want)
+			if !equal {
+				t.Errorf("Equal: %v,NewSubscriber()\n got: %v\nwant: %v", equal, got, tt.want)
 			}
 		})
 	}
 }
-
 func TestSubscriber_AddHandler(t *testing.T) {
-	type fields struct {
-		name          string
-		listening     bool
-		ch            chan interface{}
-		handlers      Handlers
-		subscriptions Subscriptions
-	}
+
 	type args struct {
 		typeOf  interface{}
-		handler HandlerFunc
+		handler *HandlerFunc
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name    string
+		fields  *Subscriber
+		args    args
+		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "Add Handler no error",
+			fields: NewSubscriber("Sub1", nil),
+			args: args{
+				typeOf:  "string",
+				handler: &fa,
+			}, wantErr: false},
+		{name: "Add Handler with error",
+			fields: NewSubscriber("Sub1", nil),
+			args: args{
+				typeOf:  nil,
+				handler: nil,
+			}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
-				name:          tt.fields.name,
-				listening:     tt.fields.listening,
-				ch:            tt.fields.ch,
-				handlers:      tt.fields.handlers,
-				subscriptions: tt.fields.subscriptions,
-			}
-			h.AddHandler(tt.args.typeOf, tt.args.handler)
-		})
-	}
-}
-
-func TestSubscriber_Channel(t *testing.T) {
-	type fields struct {
-		name          string
-		listening     bool
-		ch            chan interface{}
-		handlers      Handlers
-		subscriptions Subscriptions
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   chan interface{}
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
-				name:          tt.fields.name,
-				listening:     tt.fields.listening,
-				ch:            tt.fields.ch,
-				handlers:      tt.fields.handlers,
-				subscriptions: tt.fields.subscriptions,
-			}
-			if got := h.Channel(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Channel() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSubscriber_GetSubscriptions(t *testing.T) {
-	type fields struct {
-		name          string
-		listening     bool
-		ch            chan interface{}
-		handlers      Handlers
-		subscriptions Subscriptions
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []*Topic
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
-				name:          tt.fields.name,
-				listening:     tt.fields.listening,
-				ch:            tt.fields.ch,
-				handlers:      tt.fields.handlers,
-				subscriptions: tt.fields.subscriptions,
-			}
-			if got := h.GetSubscriptions(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetSubscriptions() = %v, want %v", got, tt.want)
+			s := tt.fields
+			if err := s.AddHandler(tt.args.typeOf, tt.args.handler); (err != nil) != tt.wantErr {
+				t.Errorf("AddHandler() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -138,45 +118,14 @@ func TestSubscriber_Listen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
+			s := &Subscriber{
 				name:          tt.fields.name,
 				listening:     tt.fields.listening,
 				ch:            tt.fields.ch,
 				handlers:      tt.fields.handlers,
 				subscriptions: tt.fields.subscriptions,
 			}
-			h.Listen()
-		})
-	}
-}
-
-func TestSubscriber_Name(t *testing.T) {
-	type fields struct {
-		name          string
-		listening     bool
-		ch            chan interface{}
-		handlers      Handlers
-		subscriptions Subscriptions
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
-				name:          tt.fields.name,
-				listening:     tt.fields.listening,
-				ch:            tt.fields.ch,
-				handlers:      tt.fields.handlers,
-				subscriptions: tt.fields.subscriptions,
-			}
-			if got := h.Name(); got != tt.want {
-				t.Errorf("Name() = %v, want %v", got, tt.want)
-			}
+			s.Listen()
 		})
 	}
 }
@@ -190,7 +139,7 @@ func TestSubscriber_Sub(t *testing.T) {
 		subscriptions Subscriptions
 	}
 	type args struct {
-		topic TopicName
+		topic *Topic
 	}
 	tests := []struct {
 		name    string
@@ -202,14 +151,14 @@ func TestSubscriber_Sub(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Subscriber{
+			s := &Subscriber{
 				name:          tt.fields.name,
 				listening:     tt.fields.listening,
 				ch:            tt.fields.ch,
 				handlers:      tt.fields.handlers,
 				subscriptions: tt.fields.subscriptions,
 			}
-			if err := h.Sub(tt.args.topic); (err != nil) != tt.wantErr {
+			if err := s.Sub(tt.args.topic); (err != nil) != tt.wantErr {
 				t.Errorf("Sub() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
