@@ -16,9 +16,6 @@ var (
 	p2 = NewPublisher("p2")
 	s1 = NewSubscriber("s1", nil, nil)
 	s2 = NewSubscriber("s2", nil, nil)
-
-	ct1 = "type1"
-	ct2 = 2
 )
 
 func TestNewTopic(t *testing.T) {
