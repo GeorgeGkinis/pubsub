@@ -13,7 +13,7 @@ type PublisherIF interface {
 }
 
 type TypeChecker interface {
-	CheckType(topicName string, checkMsg interface{}) (bool, error)
+	CheckType(topicName TopicName, checkMsg interface{}) (bool, error)
 }
 
 type Publisher struct {
@@ -25,15 +25,15 @@ func NewPublisher(name string) *Publisher {
 	return &Publisher{name: name}
 }
 
-func (p Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk bool, err error) {
+func (p *Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk bool, err error) {
 
 	t := reflect.TypeOf(checkMsg).Name()
-	topic := tm.Topic(topicName)
+	topic := TM.Topic(topicName)
 	if topic == nil {
 		err = fmt.Errorf("non-existing topic %s", topicName)
 		return
 	}
-	_, typeOk = tm.Topic(topicName).Types()[t]
+	_, typeOk = TM.Topic(topicName).Types()[t]
 	if typeOk {
 		log.Debugf("topic %s allows Type %T", topicName, checkMsg)
 	} else {
@@ -43,10 +43,10 @@ func (p Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk 
 
 }
 
-func (p Publisher) Name() string {
+func (p *Publisher) Name() string {
 	return p.name
 }
 
-func (p Publisher) GetSubscriptions() Subscriptions {
+func (p *Publisher) GetSubscriptions() Subscriptions {
 	return p.subscriptions
 }

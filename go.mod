@@ -1,6 +1,4 @@
-module github.com/georgegkinis/pubsub
-
-replace github.com/georgegkinis/pubsub v0.0.0 => /home/q/go/src/github.com/georgegkinis/pubsub/
+module github.com/GeorgeGkinis/pubsub
 
 go 1.18
 

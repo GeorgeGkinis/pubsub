@@ -1,9 +1,11 @@
 package pubsub
 
-var tm *TopicManager
+import "fmt"
+
+var TM *TopicManager
 
 func init() {
-	tm = new(TopicManager)
+	TM = new(TopicManager)
 }
 
 type topics map[TopicName]*Topic
@@ -30,4 +32,14 @@ func (tm *TopicManager) Topic(n TopicName) (t *Topic) {
 		return nil
 	}
 	return tm.topics[n]
+}
+
+func (tm *TopicManager) RegisterTopic(topic *Topic) (err error) {
+	if _, ok := tm.topics[topic.Name()]; !ok {
+		tm.topics[topic.Name()] = topic
+	} else {
+		err = fmt.Errorf("topic with name %s already exists", topic.Name())
+	}
+
+	return
 }

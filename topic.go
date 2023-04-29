@@ -20,7 +20,7 @@ func NewTypes(types ...interface{}) Types {
 
 type Subscribers map[string]SubscriberIF
 
-type Publishers map[string]*Publisher
+type Publishers map[string]PublisherIF
 
 type TopicConfig struct {
 	types              Types
@@ -120,18 +120,18 @@ func (t *Topic) Publishers() (p Publishers) {
 	return t.publishers
 }
 
-func (t *Topic) AddPub(pub *Publisher) (err error) {
+func (t *Topic) AddPub(pub PublisherIF) (err error) {
 	if !t.cfg.allowAddPub {
 		err = fmt.Errorf("AddPub not allowed for topic %s", t.name)
 		return
 	}
-	if _, ok := t.publishers[(*pub).Name()]; ok {
+	if _, ok := t.publishers[pub.Name()]; ok {
 		if !t.cfg.allowOverride {
-			err = fmt.Errorf("publisher %s already exists and allowOverride is false", (*pub).Name())
+			err = fmt.Errorf("publisher %s already exists and allowOverride is false", pub.Name())
 			return
 		}
 	}
-	t.publishers[(*pub).Name()] = pub
+	t.publishers[pub.Name()] = pub
 	return
 }
 
