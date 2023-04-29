@@ -1,4 +1,4 @@
-module github.com/GeorgeGkinis/pubsub
+module github.com/georgegkinis/pubsub
 
 go 1.20
 
