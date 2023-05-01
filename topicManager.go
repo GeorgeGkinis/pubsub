@@ -34,6 +34,15 @@ func (tm *TopicManager) Topic(n TopicName) (t *Topic) {
 	return tm.topics[n]
 }
 
+func (tm *TopicManager) Topics(topicNames []TopicName) (t []*Topic) {
+	for _, tn := range topicNames {
+		if topic, ok := tm.topics[tn]; ok {
+			t = append(t, topic)
+		}
+	}
+	return t
+}
+
 func (tm *TopicManager) RegisterTopic(topic *Topic) (err error) {
 	if _, ok := tm.topics[topic.Name()]; !ok {
 		tm.topics[topic.Name()] = topic
