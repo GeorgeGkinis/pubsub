@@ -422,9 +422,9 @@ func TestTopic_Pub(t1 *testing.T) {
 				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42},
 			}, wantErr: true},
 		{
-			name: "Publisher not exists, allowAllPublishers true, 2 messages sent",
+			name: "Publisher not exists, allowAllPublishers true, 3 messages sent",
 			topic: tp{
-				name:       "Publisher not exists, allowAllPublishers true, 2 messages sent",
+				name:       "Publisher not exists, allowAllPublishers true, 3 messages sent",
 				publishers: nil,
 				cfg: TopicConfig{
 					allowAllPublishers: true,
@@ -438,10 +438,14 @@ func TestTopic_Pub(t1 *testing.T) {
 				{
 					typeof:     42,
 					handlefunc: simpleConsoleIntHandler,
+				},
+				{
+					typeof:     "any",
+					handlefunc: simpleConsoleAnyHandler,
 				}},
 			args: args{
 				pub: *p1,
-				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42},
+				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42, 0.2},
 			}, wantErr: false,
 		},
 	}

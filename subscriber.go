@@ -59,7 +59,12 @@ func (s *Subscriber) Listen() {
 				log.Debugf("Received message of type %T", msg)
 				handler, ok := s.handlers[reflect.TypeOf(msg).Name()]
 				if !ok {
-					log.Errorf("Subscriber %s has no handler for message type %T", s.name, msg)
+					log.Debugf("Subscriber %s has no handler for message type %T, checking existence of handler for \"any\" type.", s.name, msg)
+					handler, ok = s.handlers["any"]
+					if !ok {
+						log.Errorf("Subscriber %s has no handler for message type %T, and no handler for \"any\" type.", s.name, msg)
+						return
+					}
 				}
 				if err := (*handler)(msg); err != nil {
 					log.Errorf("error handling message: %v of type %T on handler: %s", msg, msg, s.Name())
@@ -75,8 +80,13 @@ func (s *Subscriber) AddHandler(typeOf interface{}, handler *HandlerFunc) (err e
 		err = fmt.Errorf("Required: typeOf and handler. Provided: typeOf: %v", typeOf)
 		return
 	}
-	s.handlers[reflect.TypeOf(typeOf).Name()] = handler
-	log.Debugf("Added handler for type %s, %v for Subscriber %s", reflect.TypeOf(typeOf), &handler, s.name)
+	if typeOf == "any" {
+		s.handlers["any"] = handler
+		log.Debugf("Added handler for type %s, %v for Subscriber %s", "any", &handler, s.name)
+	} else {
+		s.handlers[reflect.TypeOf(typeOf).Name()] = handler
+		log.Debugf("Added handler for type %s, %v for Subscriber %s", reflect.TypeOf(typeOf), &handler, s.name)
+	}
 
 	//TODO: Check if overwriting existing handler
 	return

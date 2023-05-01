@@ -16,6 +16,11 @@ func simpleConsoleStringHandler(msg interface{}, args ...interface{}) (err error
 	return
 }
 
+func simpleConsoleAnyHandler(msg interface{}, args ...interface{}) (err error) {
+	log.Debugf("simpleConsoleAnyHandler received message: %v", msg)
+	return
+}
+
 func simpleConsoleIntHandler(msg interface{}, args ...interface{}) (err error) {
 	log.Debugf("simpleConsoleIntHandler received message: %v", msg)
 	return
