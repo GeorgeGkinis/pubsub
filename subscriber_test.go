@@ -11,12 +11,12 @@ var (
 	fa             HandlerFunc = simpleConsoleIntHandler
 )
 
-func simpleConsoleStringHandler(msg interface{}) (err error) {
+func simpleConsoleStringHandler(msg interface{}, args ...interface{}) (err error) {
 	log.Debugf("simpleConsoleStringHandler received message: %v", msg)
 	return
 }
 
-func simpleConsoleIntHandler(msg interface{}) (err error) {
+func simpleConsoleIntHandler(msg interface{}, args ...interface{}) (err error) {
 	log.Debugf("simpleConsoleIntHandler received message: %v", msg)
 	return
 }
