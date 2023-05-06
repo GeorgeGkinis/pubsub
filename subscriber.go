@@ -15,7 +15,7 @@ type SubscriberIF interface {
 	GetSubscriptions() []*Topic
 }
 
-type HandlerFunc func(msg interface{}, args ...interface{}) (err error)
+type HandlerFunc func(msg interface{}) (err error)
 
 type HandleType string
 
