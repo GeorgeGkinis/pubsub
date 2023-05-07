@@ -2,10 +2,10 @@ package pubsub
 
 import "fmt"
 
-var TM *TopicManager
+var TM = NewTopicManager()
 
 func init() {
-	TM = NewTopicManager()
+
 }
 
 type topics map[TopicName]*Topic
