@@ -44,7 +44,7 @@ func (tm *TopicManager) Topics(topicNames []TopicName) (t []*Topic) {
 }
 
 func (tm *TopicManager) RegisterTopic(topic *Topic) (err error) {
-	if _, ok := tm.topics[topic.Name()]; ok {
+	if _, ok := tm.topics[topic.Name()]; !ok {
 		tm.topics[topic.Name()] = topic
 	} else {
 		err = fmt.Errorf("topic with name %s already exists", topic.Name())
