@@ -19,8 +19,11 @@ type TopicManager struct {
 	TopicsManagerConfig
 }
 
-func NewTopicManager() (t *TopicManager) {
-	t.topics = make(topics, 0)
+func NewTopicManager() *TopicManager {
+	t := &TopicManager{
+		topics:              make(topics, 0),
+		TopicsManagerConfig: TopicsManagerConfig{},
+	}
 	return t
 }
 
