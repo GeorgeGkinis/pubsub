@@ -31,8 +31,8 @@ type Subscriber struct {
 	subscriptions Subscriptions
 }
 
-func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) *Subscriber {
-	s := Subscriber{
+func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) (s *Subscriber, err error) {
+	s = &Subscriber{
 		name:          name,
 		listening:     false,
 		ch:            make(chan interface{}, 0),
@@ -48,7 +48,11 @@ func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) *Sub
 		}
 	}
 
-	return &s
+	if s == nil {
+		return s, fmt.Errorf("could not create Subscriber")
+	}
+
+	return s, err
 }
 
 func (s *Subscriber) Listen() {
