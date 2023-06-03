@@ -67,6 +67,9 @@ func NewTopic(name TopicName, cfg TopicConfig, pubs ...*Publisher) (topic *Topic
 		t.cfg.types = cfg.types
 	}
 	log.Debugf("Created Topic %v", t)
+
+	err = TM.RegisterTopic(t)
+
 	return t, err
 }
 
