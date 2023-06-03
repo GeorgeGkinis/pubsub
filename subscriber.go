@@ -4,6 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"reflect"
+	"runtime"
 )
 
 type SubscriberIF interface {
@@ -86,7 +87,7 @@ func (s *Subscriber) AddHandler(typeOf interface{}, handler *HandlerFunc) (err e
 	}
 	if typeOf == "any" {
 		s.handlers["any"] = handler
-		log.Debugf("Added handler for type %s, %v for Subscriber %s", "any", &handler, s.name)
+		log.Debugf("Added handler for type %s, %v for Subscriber %s", "any", runtime.FuncForPC(reflect.ValueOf(*handler).Pointer()).Name(), s.name)
 	} else {
 		s.handlers[reflect.TypeOf(typeOf).Name()] = handler
 		log.Debugf("Added handler for type %s, %v for Subscriber %s", reflect.TypeOf(typeOf), &handler, s.name)
