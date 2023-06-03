@@ -63,7 +63,7 @@ func TestNewSubscriber(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got := NewSubscriber(tt.args.name, tt.args.handlers, tt.args.subscriptions...)
+			got, _ := NewSubscriber(tt.args.name, tt.args.handlers, tt.args.subscriptions...)
 			tt.want.ch = got.ch
 			equal := reflect.DeepEqual(got, tt.want)
 			if !equal {
@@ -74,6 +74,10 @@ func TestNewSubscriber(t *testing.T) {
 }
 func TestSubscriber_AddHandler(t *testing.T) {
 
+	s, err := NewSubscriber("Sub1", nil)
+	if err != nil {
+		log.Fatalf("error creating subscriber: %s", err)
+	}
 	type args struct {
 		typeOf  interface{}
 		handler *HandlerFunc
@@ -85,13 +89,13 @@ func TestSubscriber_AddHandler(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "Add Handler no error",
-			fields: NewSubscriber("Sub1", nil),
+			fields: s,
 			args: args{
 				typeOf:  "string",
 				handler: &fa,
 			}, wantErr: false},
 		{name: "Add Handler with error",
-			fields: NewSubscriber("Sub1", nil),
+			fields: s,
 			args: args{
 				typeOf:  nil,
 				handler: nil,

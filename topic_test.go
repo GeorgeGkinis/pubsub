@@ -12,10 +12,10 @@ func init() {
 }
 
 var (
-	p1 = NewPublisher("p1")
-	p2 = NewPublisher("p2")
-	s1 = NewSubscriber("s1", nil, nil)
-	s2 = NewSubscriber("s2", nil, nil)
+	p1    = NewPublisher("p1")
+	p2    = NewPublisher("p2")
+	s1, _ = NewSubscriber("s1", nil, nil)
+	s2, _ = NewSubscriber("s2", nil, nil)
 )
 
 func TestNewTopic(t *testing.T) {
@@ -458,7 +458,7 @@ func TestTopic_Pub(t1 *testing.T) {
 				log.Error(err)
 			}
 
-			s3 := NewSubscriber("s3", nil, nil)
+			s3, err := NewSubscriber("s3", nil, nil)
 			if err := t.AddSub(s3); err != nil {
 				log.Error(err)
 			}
