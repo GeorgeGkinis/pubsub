@@ -46,6 +46,10 @@ func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) (s *
 	if subscriptions != nil {
 		for _, v := range subscriptions {
 			s.subscriptions = append(s.subscriptions, v)
+			err = v.AddSub(s)
+			if s == nil {
+				return s, fmt.Errorf("cannot subscribe Subscriber %v to Topic %v", s.name, v.Name())
+			}
 		}
 	}
 
