@@ -14,8 +14,8 @@ func init() {
 var (
 	p1    = NewPublisher("p1")
 	p2    = NewPublisher("p2")
-	s1, _ = NewSubscriber("s1", nil, nil)
-	s2, _ = NewSubscriber("s2", nil, nil)
+	s1, _ = NewSubscriber("s1", nil)
+	s2, _ = NewSubscriber("s2", nil)
 )
 
 func TestNewTopic(t *testing.T) {
@@ -38,7 +38,7 @@ func TestNewTopic(t *testing.T) {
 			subscribers: make(Subscribers, 0),
 			publishers:  make(Publishers, 0),
 			cfg: TopicConfig{
-				types: make(Types, 0),
+				Types: make(Types, 0),
 			},
 		}},
 		{name: "Create Topic with (nil) config", args: args{
@@ -49,7 +49,7 @@ func TestNewTopic(t *testing.T) {
 			subscribers: make(Subscribers, 0),
 			publishers:  make(Publishers, 0),
 			cfg: TopicConfig{
-				types: make(Types, 0),
+				Types: make(Types, 0),
 			},
 		}},
 		{name: "Create Topic with 2 publishers", args: args{
@@ -68,7 +68,7 @@ func TestNewTopic(t *testing.T) {
 					subscriptions: nil,
 				}},
 			cfg: TopicConfig{
-				types: make(Types, 0),
+				Types: make(Types, 0),
 			},
 		}},
 		{name: "Create Topic with nil publishers", args: args{
@@ -79,13 +79,13 @@ func TestNewTopic(t *testing.T) {
 			subscribers: make(Subscribers, 0),
 			publishers:  make(Publishers, 0),
 			cfg: TopicConfig{
-				types: make(Types, 0),
+				Types: make(Types, 0),
 			},
 		}},
 		{name: "Create Topic with 2 Types", args: args{
 			name: "TestNewTopic2Types",
 			cfg: TopicConfig{
-				types: Types{
+				Types: Types{
 					"string": reflect.TypeOf("type1"),
 					"int":    reflect.TypeOf(2),
 				},
@@ -95,11 +95,11 @@ func TestNewTopic(t *testing.T) {
 			subscribers: make(Subscribers, 0),
 			publishers:  make(Publishers, 0),
 			cfg: TopicConfig{
-				types: Types{
+				Types: Types{
 					"string": reflect.TypeOf("type1"),
 					"int":    reflect.TypeOf(2),
 				},
-				typeSafe: true},
+				TypeSafe: true},
 		}},
 		{name: "Create Topic no name", args: args{
 			name: "",
@@ -129,39 +129,39 @@ func TestTopic_AddPub(t1 *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "Topic no Publishers and allowAddPub true", fields: Topic{
-			name:       "allowAddPub true",
+		{name: "Topic no Publishers and AllowAddPub true", fields: Topic{
+			name:       "AllowAddPub true",
 			publishers: make(Publishers, 0),
 			cfg: TopicConfig{
-				allowAddPub: true,
+				AllowAddPub: true,
 			},
 		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: false},
-		{name: "Topic no Publishers and allowAddPub false", fields: Topic{
-			name:       "allowAddPub false",
+		{name: "Topic no Publishers and AllowAddPub false", fields: Topic{
+			name:       "AllowAddPub false",
 			publishers: make(Publishers, 0),
 			cfg: TopicConfig{
-				allowAddPub: false,
+				AllowAddPub: false,
 			},
 		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
 
-		{name: "Topic with Publishers and allowAddPub true", fields: Topic{
-			name: "allowAddPub true",
+		{name: "Topic with Publishers and AllowAddPub true", fields: Topic{
+			name: "AllowAddPub true",
 			publishers: Publishers{
 				"p1": &Publisher{
 					name: "p1",
 				}},
 			cfg: TopicConfig{
-				allowAddPub: true,
+				AllowAddPub: true,
 			},
 		}, args: struct{ pub *Publisher }{pub: p2}, wantErr: false},
-		{name: "Topic with Publishers and allowAddPub false", fields: Topic{
-			name: "allowAddPub false",
+		{name: "Topic with Publishers and AllowAddPub false", fields: Topic{
+			name: "AllowAddPub false",
 			publishers: Publishers{
 				"p1": &Publisher{
 					name: "p1",
 				}},
 			cfg: TopicConfig{
-				allowAddPub: false,
+				AllowAddPub: false,
 			},
 		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
 		{name: "Add Publisher with same name to topic and allowOverwrite true", fields: Topic{
@@ -171,8 +171,8 @@ func TestTopic_AddPub(t1 *testing.T) {
 					name: "p1",
 				}},
 			cfg: TopicConfig{
-				allowAddPub:   true,
-				allowOverride: true,
+				AllowAddPub:   true,
+				AllowOverride: true,
 			},
 		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: false},
 		{name: "Add Publisher with same name to topic and allowOverwrite false", fields: Topic{
@@ -182,8 +182,8 @@ func TestTopic_AddPub(t1 *testing.T) {
 					name: "p1",
 				}},
 			cfg: TopicConfig{
-				allowAddPub:   true,
-				allowOverride: false,
+				AllowAddPub:   true,
+				AllowOverride: false,
 			},
 		}, args: struct{ pub *Publisher }{pub: p1}, wantErr: true},
 	}
@@ -206,7 +206,7 @@ func TestTopic_AddPub(t1 *testing.T) {
 
 func TestTopic_AddSub(t1 *testing.T) {
 	type args struct {
-		sub SubscriberIF
+		sub *Subscriber
 	}
 	tests := []struct {
 		name    string
@@ -214,45 +214,45 @@ func TestTopic_AddSub(t1 *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "Topic no Subs and allowOverride true", topic: Topic{
-			name:        "Topic no Subs and allowOverride true",
+		{name: "Topic no Subs and AllowOverride true", topic: Topic{
+			name:        "Topic no Subs and AllowOverride true",
 			subscribers: make(Subscribers, 0),
-			cfg:         TopicConfig{allowOverride: true},
+			cfg:         TopicConfig{AllowOverride: true},
 		}, args: args{
 			s1,
 		}, wantErr: false},
-		{name: "Topic no Subs and allowOverride false", topic: Topic{
-			name:        "Topic no Subs and allowOverride false",
+		{name: "Topic no Subs and AllowOverride false", topic: Topic{
+			name:        "Topic no Subs and AllowOverride false",
 			subscribers: make(Subscribers, 0),
-			cfg:         TopicConfig{allowOverride: false},
+			cfg:         TopicConfig{AllowOverride: false},
 		}, args: args{s1}, wantErr: false},
-		{name: "Add Subscriber with same name to topic allowOverride true", topic: Topic{
-			name: "Topic same Sub and allowOverride true",
+		{name: "Add Subscriber with same name to topic AllowOverride true", topic: Topic{
+			name: "Topic same Sub and AllowOverride true",
 			subscribers: Subscribers{
 				"s1": s1,
 			},
-			cfg: TopicConfig{allowOverride: true},
+			cfg: TopicConfig{AllowOverride: true},
 		}, args: args{s1}, wantErr: false},
-		{name: "Add Subscriber with same name to topic and allowOverride false", topic: Topic{
-			name: "Topic same Sub and allowOverride false",
+		{name: "Add Subscriber with same name to topic and AllowOverride false", topic: Topic{
+			name: "Topic same Sub and AllowOverride false",
 			subscribers: Subscribers{
 				"s1": s1,
 			},
-			cfg: TopicConfig{allowOverride: false},
+			cfg: TopicConfig{AllowOverride: false},
 		}, args: args{s1}, wantErr: true},
-		{name: "Add Subscriber with other name to topic allowOverride true", topic: Topic{
-			name: "Topic same Sub and allowOverride true",
+		{name: "Add Subscriber with other name to topic AllowOverride true", topic: Topic{
+			name: "Topic same Sub and AllowOverride true",
 			subscribers: Subscribers{
 				"s1": s1,
 			},
-			cfg: TopicConfig{allowOverride: true},
+			cfg: TopicConfig{AllowOverride: true},
 		}, args: args{s2}, wantErr: false},
-		{name: "Add Subscriber with other name to topic and allowOverride false", topic: Topic{
-			name: "Topic same Sub and allowOverride false",
+		{name: "Add Subscriber with other name to topic and AllowOverride false", topic: Topic{
+			name: "Topic same Sub and AllowOverride false",
 			subscribers: Subscribers{
 				"s1": s1,
 			},
-			cfg: TopicConfig{allowOverride: false},
+			cfg: TopicConfig{AllowOverride: false},
 		}, args: args{s2}, wantErr: false},
 	}
 	for _, tt := range tests {
@@ -284,7 +284,7 @@ func TestTopic_IsTypeSafe(t1 *testing.T) {
 			subscribers: nil,
 			publishers:  nil,
 			cfg: TopicConfig{
-				typeSafe: true,
+				TypeSafe: true,
 			},
 		}, want: true},
 		{name: "Topic isTypeSafe false", topic: Topic{
@@ -292,7 +292,7 @@ func TestTopic_IsTypeSafe(t1 *testing.T) {
 			subscribers: nil,
 			publishers:  nil,
 			cfg: TopicConfig{
-				typeSafe: false,
+				TypeSafe: false,
 			},
 		}, want: false},
 	}
@@ -359,11 +359,11 @@ func TestTopic_Pub(t1 *testing.T) {
 		args     args
 		wantErr  bool
 	}{
-		{name: "Publisher exists, allowAllPublishers true, 2 messages sent", topic: tp{
-			name:       "Publisher exists and allowAllPublishers true",
+		{name: "Publisher exists, AllowAllPublishers true, 2 messages sent", topic: tp{
+			name:       "Publisher exists and AllowAllPublishers true",
 			publishers: []*Publisher{p1},
 			cfg: TopicConfig{
-				allowAllPublishers: true,
+				AllowAllPublishers: true,
 			},
 		},
 			handlers: []handler{
@@ -377,13 +377,13 @@ func TestTopic_Pub(t1 *testing.T) {
 				}},
 			args: args{
 				pub: *p1,
-				msg: []interface{}{"Message: Publisher exists and allowAllPublishers false", 42},
+				msg: []interface{}{"Message: Publisher exists and AllowAllPublishers false", 42},
 			}, wantErr: false},
-		{name: "Publisher exists, allowAllPublishers false, 2 messages sent", topic: tp{
-			name:       "Publisher exists and allowAllPublishers false",
+		{name: "Publisher exists, AllowAllPublishers false, 2 messages sent", topic: tp{
+			name:       "Publisher exists and AllowAllPublishers false",
 			publishers: []*Publisher{p1},
 			cfg: TopicConfig{
-				allowAllPublishers: false,
+				AllowAllPublishers: false,
 			},
 		},
 			handlers: []handler{
@@ -397,15 +397,15 @@ func TestTopic_Pub(t1 *testing.T) {
 				}},
 			args: args{
 				pub: *p1,
-				msg: []interface{}{"Message: Publisher exists and allowAllPublishers false", 42},
+				msg: []interface{}{"Message: Publisher exists and AllowAllPublishers false", 42},
 			}, wantErr: false},
 		{
-			name: "Publisher not exists, allowAllPublishers false, 2 messages sent",
+			name: "Publisher not exists, AllowAllPublishers false, 2 messages sent",
 			topic: tp{
-				name:       "Publisher not exists, allowAllPublishers false, 2 messages sent",
+				name:       "Publisher not exists, AllowAllPublishers false, 2 messages sent",
 				publishers: nil,
 				cfg: TopicConfig{
-					allowAllPublishers: false,
+					AllowAllPublishers: false,
 				},
 			},
 			handlers: []handler{
@@ -419,15 +419,15 @@ func TestTopic_Pub(t1 *testing.T) {
 				}},
 			args: args{
 				pub: *p1,
-				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42},
+				msg: []interface{}{"Message: Publisher exists and AllowAllPublishers true", 42},
 			}, wantErr: true},
 		{
-			name: "Publisher not exists, allowAllPublishers true, 3 messages sent",
+			name: "Publisher not exists, AllowAllPublishers true, 3 messages sent",
 			topic: tp{
-				name:       "Publisher not exists, allowAllPublishers true, 3 messages sent",
+				name:       "Publisher not exists, AllowAllPublishers true, 3 messages sent",
 				publishers: nil,
 				cfg: TopicConfig{
-					allowAllPublishers: true,
+					AllowAllPublishers: true,
 				},
 			},
 			handlers: []handler{
@@ -445,7 +445,7 @@ func TestTopic_Pub(t1 *testing.T) {
 				}},
 			args: args{
 				pub: *p1,
-				msg: []interface{}{"Message: Publisher exists and allowAllPublishers true", 42, 0.2},
+				msg: []interface{}{"Message: Publisher exists and AllowAllPublishers true", 42, 0.2},
 			}, wantErr: false,
 		},
 	}
@@ -458,8 +458,9 @@ func TestTopic_Pub(t1 *testing.T) {
 				log.Error(err)
 			}
 
-			s3, err := NewSubscriber("s3", nil, nil)
-			if err := t.AddSub(s3); err != nil {
+			s3, err := NewSubscriber("s3", nil)
+			err = t.AddSub(s3)
+			if err != nil {
 				log.Error(err)
 			}
 			for _, v := range tt.handlers {
@@ -467,7 +468,7 @@ func TestTopic_Pub(t1 *testing.T) {
 			}
 			log.Debugf("Handlers registered: %v", s3.handlers)
 			s3.Listen()
-			err = t.Pub(tt.args.pub, tt.args.msg...)
+			err = t.Pub(&tt.args.pub, tt.args.msg...)
 			log.Error(err)
 			if err != nil != tt.wantErr {
 				t1.Errorf("Pub() error = %v, wantErr %v", err, tt.wantErr)
@@ -538,35 +539,35 @@ func TestTopic_SetName(t1 *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "Set Name, allowSetName true",
+		{name: "Set Name, AllowSetName true",
 			topic: tp{
 				name: "Name Before",
 				cfg: TopicConfig{
-					allowSetName: true,
+					AllowSetName: true,
 				},
 			}, args: args{name: "Name After"},
 			wantErr: false},
-		{name: "Set Name to empty, allowSetName true",
+		{name: "Set Name to empty, AllowSetName true",
 			topic: tp{
 				name: "Name Before",
 				cfg: TopicConfig{
-					allowSetName: true,
+					AllowSetName: true,
 				},
 			}, args: args{name: ""},
 			wantErr: true},
-		{name: "Set Name , allowSetName false",
+		{name: "Set Name , AllowSetName false",
 			topic: tp{
 				name: "Name Before",
 				cfg: TopicConfig{
-					allowSetName: false,
+					AllowSetName: false,
 				},
 			}, args: args{name: "Name After"},
 			wantErr: true},
-		{name: "Set Name to empty, allowSetName false",
+		{name: "Set Name to empty, AllowSetName false",
 			topic: tp{
 				name: "Name Before",
 				cfg: TopicConfig{
-					allowSetName: false,
+					AllowSetName: false,
 				},
 			}, args: args{name: ""},
 			wantErr: true},
@@ -598,18 +599,18 @@ func TestTopic_SetTypeSafe(t1 *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{name: "SetTypeSafe, allowSetTypeSafe true",
+		{name: "SetTypeSafe, AllowSetTypeSafe true",
 			topic: Topic{
-				name: "SetTypeSafe, allowSetTypeSafe true",
+				name: "SetTypeSafe, AllowSetTypeSafe true",
 				cfg: TopicConfig{
-					allowSetTypeSafe: true,
+					AllowSetTypeSafe: true,
 				},
 			}, args: args{typeSafe: true}, wantErr: false},
-		{name: "SetTypeSafe, allowSetTypeSafe false",
+		{name: "SetTypeSafe, AllowSetTypeSafe false",
 			topic: Topic{
-				name: "SetTypeSafe, allowSetTypeSafe false",
+				name: "SetTypeSafe, AllowSetTypeSafe false",
 				cfg: TopicConfig{
-					allowSetTypeSafe: false,
+					AllowSetTypeSafe: false,
 				},
 			}, args: args{typeSafe: true}, wantErr: true},
 	}
@@ -652,7 +653,7 @@ func TestTopic_SetTypes(t1 *testing.T) {
 			topic: tp{
 				name: "SetTypes and allowsSetTypes true",
 				cfg: TopicConfig{
-					allowSetTypes: true,
+					AllowSetTypes: true,
 				},
 			}, args: args{types: []interface{}{
 				"42",
@@ -660,11 +661,11 @@ func TestTopic_SetTypes(t1 *testing.T) {
 				Topic{},
 			},
 			}, wantErr: false},
-		{name: "SetTypes and allowSetTypes false",
+		{name: "SetTypes and AllowSetTypes false",
 			topic: tp{
 				name: "SetTypes and allowsSetTypes false",
 				cfg: TopicConfig{
-					allowSetTypes: false,
+					AllowSetTypes: false,
 				},
 			}, args: args{types: []interface{}{
 				"42",
@@ -676,7 +677,7 @@ func TestTopic_SetTypes(t1 *testing.T) {
 			topic: tp{
 				name: "SetTypes and allowsSetTypes true",
 				cfg: TopicConfig{
-					allowSetTypes: true,
+					AllowSetTypes: true,
 				},
 			}, args: args{types: []interface{}{}}, wantErr: true},
 	}
@@ -687,7 +688,7 @@ func TestTopic_SetTypes(t1 *testing.T) {
 			if err != nil {
 				log.Error(err)
 			}
-			log.Debugf("Types: %s", t.cfg.types)
+			log.Debugf("Types: %s", t.cfg.Types)
 
 			tmpTypes := func(types ...interface{}) (t Types) {
 				t = make(Types, 0)
@@ -697,8 +698,8 @@ func TestTopic_SetTypes(t1 *testing.T) {
 				return
 			}
 			tmpt := tmpTypes(tt.args.types...)
-			b := reflect.DeepEqual(tmpt, t.cfg.types)
-			log.Debugf("DeepEqual: %v,Wanted %s, got %s", b, tmpt, t.cfg.types)
+			b := reflect.DeepEqual(tmpt, t.cfg.Types)
+			log.Debugf("DeepEqual: %v,Wanted %s, got %s", b, tmpt, t.cfg.Types)
 
 			if (err != nil) != tt.wantErr {
 				t1.Errorf("SetTypes() error = %v, wantErr %v", err, tt.wantErr)
@@ -766,14 +767,14 @@ func TestTopic_Types(t1 *testing.T) {
 			fields: fields{
 				name: "Topic no Types",
 				cfg: TopicConfig{
-					types: make(Types, 0),
+					Types: make(Types, 0),
 				},
 			}, wantTy: make(Types, 0)},
 		{name: "Topic one Type",
 			fields: fields{
 				name: "Topic one Type",
 				cfg: TopicConfig{
-					types: NewTypes(Topic{}),
+					Types: NewTypes(Topic{}),
 				},
 			}, wantTy: Types{
 				"Topic": reflect.TypeOf(Topic{}),
@@ -783,7 +784,7 @@ func TestTopic_Types(t1 *testing.T) {
 			fields: fields{
 				name: "Topic three Types",
 				cfg: TopicConfig{
-					types: NewTypes("", 41, Topic{}),
+					Types: NewTypes("", 41, Topic{}),
 				},
 			}, wantTy: Types{
 				"Topic":  reflect.TypeOf(Topic{}),
