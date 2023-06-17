@@ -10,6 +10,8 @@ type PublisherIF interface {
 	TypeChecker
 	Name() string
 	GetSubscriptions() Subscriptions
+	Pub(topic *Topic, msg any) error
+	PubAll(msg any) error
 }
 
 type TypeChecker interface {
@@ -49,4 +51,21 @@ func (p *Publisher) Name() string {
 
 func (p *Publisher) GetSubscriptions() Subscriptions {
 	return p.subscriptions
+}
+
+func (p *Publisher) Pub(topic *Topic, msg any) (err error) {
+	if err = topic.Pub(p, msg); err != nil {
+		err = fmt.Errorf("publisher %s failed to publish to topic %s.\nmessage: %v, \nreason: %w", p.Name(), topic.Name(), msg, err)
+		return err
+	}
+	return
+}
+
+func (p *Publisher) PubAll(msg any) (err error) {
+	for _, v := range p.subscriptions {
+		if err = p.Pub(v, msg); err != nil {
+			return err
+		}
+	}
+	return
 }
