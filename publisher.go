@@ -12,6 +12,7 @@ type PublisherIF interface {
 	GetSubscriptions() Subscriptions
 	Pub(topic *Topic, msg any) error
 	PubAll(msg any) error
+	AddSubscription(topic *Topic) error
 }
 
 type TypeChecker interface {
@@ -24,7 +25,9 @@ type Publisher struct {
 }
 
 func NewPublisher(name string) *Publisher {
-	return &Publisher{name: name}
+	return &Publisher{
+		name:          name,
+		subscriptions: make(Subscriptions)}
 }
 
 func (p *Publisher) CheckType(topicName TopicName, checkMsg interface{}) (typeOk bool, err error) {
@@ -67,5 +70,10 @@ func (p *Publisher) PubAll(msg any) (err error) {
 			return err
 		}
 	}
+	return
+}
+
+func (p *Publisher) AddSubscription(topic *Topic) (err error) {
+	p.subscriptions[topic.Name()] = topic
 	return
 }

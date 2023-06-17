@@ -14,8 +14,8 @@ func init() {
 var (
 	p1    = NewPublisher("p1")
 	p2    = NewPublisher("p2")
-	s1, _ = NewSubscriber("s1", nil)
-	s2, _ = NewSubscriber("s2", nil)
+	s1, _ = NewSubscriber("s1", nil, Subscriptions{})
+	s2, _ = NewSubscriber("s2", nil, Subscriptions{})
 )
 
 func TestNewTopic(t *testing.T) {
@@ -61,11 +61,11 @@ func TestNewTopic(t *testing.T) {
 			publishers: Publishers{
 				"p1": &Publisher{
 					name:          "p1",
-					subscriptions: nil,
+					subscriptions: Subscriptions{},
 				},
 				"p2": &Publisher{
 					name:          "p2",
-					subscriptions: nil,
+					subscriptions: Subscriptions{},
 				}},
 			cfg: TopicConfig{
 				Types: make(Types, 0),
@@ -458,7 +458,7 @@ func TestTopic_Pub(t1 *testing.T) {
 				log.Error(err)
 			}
 
-			s3, err := NewSubscriber("s3", nil)
+			s3, err := NewSubscriber("s3", nil, Subscriptions{})
 			err = t.AddSub(s3)
 			if err != nil {
 				log.Error(err)

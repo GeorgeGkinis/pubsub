@@ -82,7 +82,6 @@ func (t *Topic) Pub(pub *Publisher, msg ...interface{}) (err error) {
 		for _, m := range msg {
 			(s).Channel() <- m
 		}
-
 	}
 	return
 }

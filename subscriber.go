@@ -22,7 +22,7 @@ type HandleType string
 
 type Handlers map[string]*HandlerFunc
 
-type Subscriptions []*Topic
+type Subscriptions map[TopicName]*Topic
 
 type Subscriber struct {
 	name          string
@@ -32,7 +32,7 @@ type Subscriber struct {
 	subscriptions Subscriptions
 }
 
-func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) (s *Subscriber, err error) {
+func NewSubscriber(name string, handlers Handlers, subscriptions []*Topic) (s *Subscriber, err error) {
 	s = &Subscriber{
 		name:          name,
 		listening:     false,
@@ -45,7 +45,7 @@ func NewSubscriber(name string, handlers Handlers, subscriptions ...*Topic) (s *
 	}
 	if subscriptions != nil {
 		for _, v := range subscriptions {
-			s.subscriptions = append(s.subscriptions, v)
+			s.subscriptions[v.Name()] = v
 			err = v.AddSub(s)
 			if s == nil {
 				return s, fmt.Errorf("cannot subscribe Subscriber %v to Topic %v", s.name, v.Name())
@@ -76,7 +76,7 @@ func (s *Subscriber) Listen() {
 					}
 				}
 				if err := (*handler)(msg); err != nil {
-					log.Errorf("error handling message: %v of type %T on handler: %s", msg, msg, s.Name())
+					log.Errorf("error handling message: %v of type %T on handler: %s: %s", msg, msg, s.Name(), err)
 				}
 			}
 		}()
@@ -109,12 +109,12 @@ func (s *Subscriber) Channel() chan interface{} {
 	return s.ch
 }
 
-func (s *Subscriber) GetSubscriptions() []*Topic {
+func (s *Subscriber) GetSubscriptions() Subscriptions {
 	return s.subscriptions
 }
 
 func (s *Subscriber) Sub(topic *Topic) (err error) {
-	s.subscriptions = append(s.subscriptions, topic)
+	s.subscriptions[topic.Name()] = topic
 	err = topic.AddSub(s)
 	return err
 }
